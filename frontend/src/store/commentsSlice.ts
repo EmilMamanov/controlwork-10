@@ -32,7 +32,6 @@ export const createComment = createAsyncThunk<Comment, { newsId: string; text: s
     async ({ newsId, text }) => {
         try {
             const commentResponse = await axiosApi.post<Comment>('/comments', { newsId, text });
-            dispatch(fetchCommentsById(newsId));
             return commentResponse.data;
         } catch (error) {
             throw error;
@@ -40,49 +39,42 @@ export const createComment = createAsyncThunk<Comment, { newsId: string; text: s
     }
 );
 
-export const deleteComment = createAsyncThunk<void, string>(
-    'comments/deleteComment',
-    async (commentId: string) => {
-        try {
-            await axiosApi.delete(`/comments/${commentId}`);
-        } catch (error) {
-            throw error;
-        }
-    }
-);
-
-const commentsSlice = createSlice({
+export const commentsSlice = createSlice({
     name: 'comments',
     initialState,
-    reducers: {},
-    extraReducers: (builder) => {
-        builder.addCase(fetchComments.pending, (state) => {
-            state.fetchLoading = true;
-        });
-
-        builder.addCase(fetchComments.fulfilled, (state, action: PayloadAction<Comment[]>) => {
-            const newsId = action.meta.arg;
-            state.items[newsId] = action.payload;
-            state.fetchLoading = false;
-        });
-
-        builder.addCase(createComment.pending, (state) => {
-            state.createLoading = true;
-        });
-
-        builder.addCase(createComment.fulfilled, (state, action: PayloadAction<Comment>) => {
-            const newsId = action.payload.newsId;
+    reducers: {
+        addComment: (state: CommentsState, action: PayloadAction<Comment>) => {
+            const { newsId } = action.payload;
             state.items[newsId] = state.items[newsId] || [];
             state.items[newsId].push(action.payload);
-            state.createLoading = false;
-        });
-
+        },
+    },
+    extraReducers: (builder) => {
+        builder
+            .addCase(fetchComments.pending, (state) => {
+                state.fetchLoading = true;
+            })
+            .addCase(fetchComments.fulfilled, (state, action) => {
+                const newsId = action.meta.arg;
+                state.items[newsId] = action.payload;
+                state.fetchLoading = false;
+            })
+            .addCase(createComment.pending, (state) => {
+                state.createLoading = true;
+            })
+            .addCase(createComment.fulfilled, (state, action) => {
+                const newsId = action.payload.newsId;
+                state.items[newsId] = state.items[newsId] || [];
+                state.items[newsId].push(action.payload);
+                state.createLoading = false;
+            });
     },
 });
 
 export const selectComments = (state: RootState, newsId: string) => state.comments.items[newsId] || [];
 export const selectCommentsLoading = (state: RootState) => state.comments.fetchLoading || state.comments.createLoading;
 
-export const { reducer: commentsReducer } = commentsSlice;
+export const { reducer: commentsReducer, actions } = commentsSlice;
+export const { addComment } = actions;
 
 export default commentsSlice.reducer;

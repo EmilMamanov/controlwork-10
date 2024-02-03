@@ -1,6 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import axiosApi from '../app/axiosApi';
 import { Comment } from '../types';
+import { useAppDispatch } from '../app/hooks';
 
 export const fetchCommentsById = createAsyncThunk<Comment[], string>(
     'comments/fetchCommentsById',
@@ -16,10 +17,11 @@ export const fetchCommentsById = createAsyncThunk<Comment[], string>(
 
 export const createComment = createAsyncThunk<Comment, { newsId: string; text: string }>(
     'comments/createComment',
-    async ({ newsId, text }, { dispatch, getState }) => {
+    async ({ newsId, text }) => {
+        const dispatch = useAppDispatch();  // Используем хук useAppDispatch
         try {
             const commentResponse = await axiosApi.post<Comment>('/comments', { newsId, text });
-            dispatch(fetchCommentsById(newsId));
+            dispatch(fetchCommentsById(newsId));  // Используем fetchCommentsById
             return commentResponse.data;
         } catch (error) {
             throw error;

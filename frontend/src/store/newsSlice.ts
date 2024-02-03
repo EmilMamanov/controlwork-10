@@ -2,6 +2,8 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { RootState } from '../app/store';
 import { News } from '../types';
 import { fetchNews, createNews } from './newsThunks';
+import axiosApi from "../app/axiosApi.ts";
+import { createAsyncThunk } from '@reduxjs/toolkit';
 
 interface NewsState {
     items: News[];
@@ -16,6 +18,17 @@ const initialState: NewsState = {
 };
 
 export const selectNewsCreating = (state: RootState) => state.news.createLoading;
+
+export const deleteNews = createAsyncThunk<void, string>(
+    'news/deleteNews',
+    async (newsId: string) => {
+        try {
+            await axiosApi.delete(`/news/${newsId}`);
+        } catch (error) {
+            throw error;
+        }
+    }
+);
 
 export const newsSlice = createSlice({
     name: 'news',
@@ -40,6 +53,18 @@ export const newsSlice = createSlice({
         });
 
         builder.addCase(createNews.rejected, (state) => {
+            state.createLoading = false;
+        });
+
+        builder.addCase(deleteNews.pending, (state) => {
+            state.createLoading = true;
+        });
+
+        builder.addCase(deleteNews.fulfilled, (state, _action) => {
+            state.createLoading = false;
+        });
+
+        builder.addCase(deleteNews.rejected, (state) => {
             state.createLoading = false;
         });
     },

@@ -1,11 +1,10 @@
 import React, { useEffect } from 'react';
-import {Link, useParams} from 'react-router-dom';
+import { useParams} from 'react-router-dom';
 import { selectNews } from '../store/newsSlice';
 import { fetchNewsById } from '../store/newsThunks';
 import { useAppDispatch, useAppSelector  } from '../app/hooks';
-import {Button, Grid, Typography} from "@mui/material";
-import NewsForm from "./NewsForm.tsx";
-import {Comment} from "@mui/icons-material";
+import axiosApi from '../app/axiosApi.ts';
+import { Grid, Typography} from "@mui/material";
 import CommentForm from "./CommentForm.tsx";
 
 interface Props {}
@@ -14,7 +13,7 @@ const NewsDetails: React.FC<Props> = () => {
     const { id } = useParams<{ id: string }>();
     const dispatch = useAppDispatch();
     const news = useAppSelector(selectNews);
-    const selectedNews = news.find((item) => item.id === id);
+    const selectedNews = news.find((item) => item.id === id)!;
 
     useEffect(() => {
         const fetchData = async () => {
@@ -23,7 +22,6 @@ const NewsDetails: React.FC<Props> = () => {
                 if (fetchNewsById.fulfilled.match(resultAction)) {
                     console.log('Fetched data:', resultAction.payload);
                 } else {
-                    // Обработка ошибки или данных, которые не удалось получить
                     console.error('Error fetching news by id:', resultAction.error);
                 }
             } catch (error) {
@@ -35,6 +33,19 @@ const NewsDetails: React.FC<Props> = () => {
             fetchData();
         }
     }, [dispatch, id, selectedNews]);
+
+    const addCommentHandler = async (commentText: string) => {
+        try {
+            const newComment = await axiosApi.addComment(selectedNews.id, commentText);
+
+            dispatch(addComment(newComment));
+
+
+            console.log('Adding comment:', newComment);
+        } catch (error) {
+            console.error('Error adding comment:', error);
+        }
+    };
 
     if (!selectedNews) {
         return <div>Loading...</div>;
@@ -53,7 +64,7 @@ const NewsDetails: React.FC<Props> = () => {
                 <Typography variant="h4">News</Typography>
             </Grid>
             <Grid item>
-                <CommentForm/>
+                <CommentForm onSubmit={addCommentHandler} />
             </Grid>
         </div>
 
